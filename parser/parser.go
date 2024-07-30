@@ -4,17 +4,23 @@ import (
 	"dodo-lang/ast"
 	"dodo-lang/lexer"
 	"dodo-lang/token"
+	"fmt"
 )
 
 type Parser struct {
 	l *lexer.Lexer
+
+	errors []string
 
 	currToken token.Token
 	peekToken token.Token
 }
 
 func New(l *lexer.Lexer) *Parser {
-	p := &Parser{l: l}
+	p := &Parser{
+		l:      l,
+		errors: []string{},
+	}
 
 	// Read two so that both currToken and peekToken are set
 	p.nextToken()
@@ -23,16 +29,25 @@ func New(l *lexer.Lexer) *Parser {
 	return p
 }
 
+func (p *Parser) Errors() []string {
+	return p.errors
+}
+
 func (p *Parser) nextToken() {
 	p.currToken = p.peekToken
 	p.peekToken = p.l.NextToken()
+}
+
+func (p *Parser) peekError(t token.TokenType) {
+	msg := fmt.Sprintf("expected next token to be %s, got %s instead", t, p.peekToken.Type)
+	p.errors = append(p.errors, msg)
 }
 
 func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
 
-	for p.currToken.Type != token.EOF {
+	for !p.currTokenIs(token.EOF) {
 		stmt := p.parseStatement()
 
 		if stmt != nil {
@@ -89,6 +104,7 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 		p.nextToken()
 		return true
 	} else {
+		p.peekError(t)
 		return false
 	}
 }
