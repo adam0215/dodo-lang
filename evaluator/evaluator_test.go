@@ -4,6 +4,7 @@ import (
 	"dodo-lang/lexer"
 	"dodo-lang/object"
 	"dodo-lang/parser"
+	"fmt"
 	"testing"
 )
 
@@ -224,6 +225,25 @@ func TestLetStatemnets(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
+}
+
+func TestFunctionApplication(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"let identity = fn(x) { x; }; identity(5);", 5},
+		{"let identity = fn(x) { return x; }; identity(5);", 5},
+		{"let double = fn(x) { x * 2; }; double(5);", 10},
+		{"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+		{"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+		{"fn(x) { x; }(5)", 5},
+	}
+
+	for i, tt := range tests {
+		fmt.Printf("t%d\n", i)
 		testIntegerObject(t, testEval(tt.input), tt.expected)
 	}
 }
