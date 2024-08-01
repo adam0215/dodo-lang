@@ -73,10 +73,12 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalInfixExpression(node.Operator, left, right)
 	case *ast.IfExpression:
 		return evalIfExpression(node, env)
+	case *ast.FunctionLiteral:
+		params := node.Parameters
+		body := node.Body
+		return &object.Function{Parameters: params, Body: body, Env: env}
 	case *ast.CallExpression:
 		function := Eval(node.Function, env)
-
-		fmt.Printf("FUN (%T) %T\n", node.Function, function)
 
 		if isError(function) {
 			return function
