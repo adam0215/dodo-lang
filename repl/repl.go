@@ -2,13 +2,14 @@ package repl
 
 import (
 	"bufio"
+	"dodo-lang/evaluator"
 	"dodo-lang/lexer"
 	"dodo-lang/parser"
 	"fmt"
 	"io"
 )
 
-const PROMPT = ">> "
+const PROMPT = "\n>> "
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
@@ -32,8 +33,12 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, program.String())
-		io.WriteString(out, "\n")
+		evaluated := evaluator.Eval(program)
+
+		if evaluated != nil {
+			io.WriteString(out, evaluated.Inspect())
+			io.WriteString(out, "\n")
+		}
 	}
 }
 
