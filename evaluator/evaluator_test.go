@@ -242,12 +242,14 @@ func TestDotExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`"hello world".len`, 11},
-		{`"hello world".first`, "h"},
-		{`"hello world".last`, "d"},
-		{`"hello world".rest`, "ello world"},
+		{`"hello world".len()`, 11},
+		{`"hello world".first()`, "h"},
+		{`"hello world".last()`, "d"},
+		{`"hello world".rest()`, "ello world"},
+		{`[1, 2, 3].push(4)`, "[1, 2, 3, 4]"},
+		{`[1, 2, 3].len`, 3},
 		{`1.len`, "argument to `len` not supported, got INTEGER"},
-		{`"hello world".doesnotexist`, "doesnotexist does not exist on STRING"},
+		{`"hello world".doesnotexist()`, "identifier not found: doesnotexist"},
 	}
 
 	for _, tt := range tests {
@@ -265,6 +267,8 @@ func TestDotExpressions(t *testing.T) {
 				}
 			case *object.String:
 				testStringObject(t, evaluated, expected)
+			case *object.Array:
+				testArrayObject(t, evaluated, expected)
 			}
 		default:
 			testNullObject(t, evaluated)

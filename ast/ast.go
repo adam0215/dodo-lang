@@ -174,9 +174,10 @@ func (ie *IndexExpression) String() string {
 }
 
 type DotExpression struct {
-	Token token.Token
-	Left  Expression
-	Field *Identifier
+	Token     token.Token
+	Left      Expression
+	Function  Expression
+	Arguments []Expression
 }
 
 func (de *DotExpression) expressionNode()      {}
@@ -184,9 +185,18 @@ func (de *DotExpression) TokenLiteral() string { return de.Token.Literal }
 func (de *DotExpression) String() string {
 	var out bytes.Buffer
 
+	args := []string{}
+
+	for _, a := range de.Arguments {
+		args = append(args, a.String())
+	}
+
 	out.WriteString(de.Left.String())
 	out.WriteString(".")
-	out.WriteString(de.Field.String())
+	out.WriteString(de.Function.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
 
 	return out.String()
 }

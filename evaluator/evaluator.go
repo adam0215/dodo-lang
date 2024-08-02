@@ -239,17 +239,20 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.DotExpression:
 		left := Eval(node.Left, env)
 
-		if isError(left) {
-			return left
+		function := Eval(node.Function, env)
+
+		if isError(function) {
+			return function
 		}
 
-		field := evalIdentifier(node.Field, env)
+		args := evalExpressions(node.Arguments, env)
 
-		if isError(field) {
-			return newError("%s does not exist on %s", node.Field.Value, left.Type())
+		// Return instantly if an error is encountered when evaluating the arguments
+		if len(args) == 1 && isError(args[0]) {
+			return args[0]
 		}
 
-		return evalDotExpression(left, field)
+		return evalDotExpression(left, function, args)
 	case *ast.FunctionLiteral:
 		params := node.Parameters
 		body := node.Body
@@ -503,13 +506,14 @@ func evalIndexExpression(array, index object.Object) object.Object {
 	return newError("cannot index %T", array)
 }
 
-func evalDotExpression(left, field object.Object) object.Object {
-	switch result := field.(type) {
+func evalDotExpression(left, fn object.Object, args []object.Object) object.Object {
+	switch result := fn.(type) {
 	case *object.Builtin:
-		return result.Fn(left)
+		allArgs := append([]object.Object{left}, args...)
+		return result.Fn(allArgs...)
 	}
 
-	return newError("%s does not exist on type %s", field.Inspect(), left.Type())
+	return newError("%s does not exist on type %s", fn.Inspect(), left.Type())
 }
 
 func isTruthy(obj object.Object) bool {

@@ -268,7 +268,7 @@ func TestParsingIndexExpressions(t *testing.T) {
 }
 
 func TestDotExpression(t *testing.T) {
-	input := "myArray.len"
+	input := "myArray.push(1, 2, 3, 4)"
 
 	l := lexer.New(input)
 	p := New(l)
@@ -286,8 +286,12 @@ func TestDotExpression(t *testing.T) {
 		return
 	}
 
-	if !testIdentifier(t, dotExp.Field, "len") {
+	if !testIdentifier(t, dotExp.Function, "push") {
 		return
+	}
+
+	if len(dotExp.Arguments) != 4 {
+		t.Fatalf("wrong length of arguments. got=%d", len(dotExp.Arguments))
 	}
 }
 
@@ -756,6 +760,7 @@ func TestCallExpressionParsing(t *testing.T) {
 	}
 
 	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+
 	if !ok {
 		t.Fatalf("stmt is not ast.ExpressionStatement. got=%T",
 			program.Statements[0])

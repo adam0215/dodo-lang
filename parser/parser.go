@@ -287,7 +287,11 @@ func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
 
 	p.expectPeek(token.IDENT)
 
-	exp.Field = &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
+	exp.Function = p.parseIdentifier()
+
+	p.expectPeek(token.LPAREN)
+
+	exp.Arguments = p.parseExpressionList(token.RPAREN, token.COMMA)
 
 	return exp
 }
