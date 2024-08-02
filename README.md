@@ -2,10 +2,6 @@
   <img src="./dodo_banner.svg" alt="Dodo Programming Language">
 </p>
 
-# Dodo Lang
-
----
-
 Dodo Lang is an extended/modified version of the Monkey Programming Language and its interpreter implemented throughout the book [Writing An Interpreter In Go](https://interpreterbook.com/) by Thorsten Ball. Highly recommend it.
 
 Following are the additional features I've added or things I've changed in the language.
