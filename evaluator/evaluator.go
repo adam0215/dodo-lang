@@ -148,7 +148,45 @@ var builtins = map[string]*object.Builtin{
 
 			fmt.Printf("%s\n", arg.Inspect())
 
-			return &object.Null{}
+			return NULL
+		},
+	},
+	"println": {
+		Fn: func(args ...object.Object) object.Object {
+			for _, arg := range args {
+				fmt.Println(arg.Inspect())
+			}
+
+			return NULL
+		},
+	},
+	"printf": {
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) < 2 {
+				return newError("wrong number of arguments. got=%d, expected at least 2", len(args))
+			}
+
+			formatStr, ok := args[0].(*object.String)
+
+			if !ok {
+				return newError("first argument has to be a string. got=%s", args[0].Type())
+			}
+
+			var templateArgs []any
+
+			for _, arg := range args[1:] {
+				switch a := arg.(type) {
+				case *object.String:
+					templateArgs = append(templateArgs, a.Value)
+				case *object.Integer:
+					templateArgs = append(templateArgs, a.Value)
+				}
+			}
+
+			fmt.Printf(formatStr.Value, templateArgs...)
+			fmt.Print("\n")
+
+			return NULL
 		},
 	},
 }
