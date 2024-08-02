@@ -243,6 +243,9 @@ func TestDotExpressions(t *testing.T) {
 		expected interface{}
 	}{
 		{`"hello world".len`, 11},
+		{`"hello world".first`, "h"},
+		{`"hello world".last`, "d"},
+		{`"hello world".rest`, "ello world"},
 		{`1.len`, "argument to `len` not supported, got INTEGER"},
 		{`"hello world".doesnotexist`, "doesnotexist does not exist on STRING"},
 	}
@@ -451,6 +454,20 @@ func TestBuiltinFunction(t *testing.T) {
 		{`len([])`, 0},
 		{`len(1)`, "argument to `len` not supported, got INTEGER"},
 		{`len("one", "two")`, "wrong number of arguments. got=2, expected=1"},
+		{`rest([1, 2, 3])`, "[2, 3]"},
+		{`rest("hello world")`, "ello world"},
+		{`rest([])`, NULL},
+		{`rest("")`, NULL},
+		{`first([1, 2, 3])`, 1},
+		{`first([])`, NULL},
+		{`first("")`, NULL},
+		{`last([1, 2, 3])`, 3},
+		{`last([])`, NULL},
+		{`last("")`, NULL},
+		{`push([1, 2, 3], 4);`, "[1, 2, 3, 4]"},
+		{`let myArray = [1, 2, 3];
+		  let newArray = push(myArray, 4);
+		  newArray;`, "[1, 2, 3, 4]"},
 		{`typeof("hello world")`, "STRING"},
 		{`typeof(9)`, "INTEGER"},
 		{`typeof(fn (x) { 420; })`, "FUNCTION"},
@@ -474,13 +491,13 @@ func TestBuiltinFunction(t *testing.T) {
 		case string:
 			switch result := evaluated.(type) {
 			case *object.Error:
-
 				if result.Message != expected {
 					t.Errorf("wrong error message. expected=%q, got=%q", expected, result.Message)
 				}
 			case *object.String:
 				testStringObject(t, result, string(expected))
-
+			case *object.Array:
+				testArrayObject(t, result, expected)
 			case *object.Null:
 				var buf bytes.Buffer
 				buf.ReadFrom(pipeReader)
@@ -550,6 +567,23 @@ func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
 
 	return true
 }
+
+func testArrayObject(t *testing.T, obj object.Object, expected string) bool {
+	result, ok := obj.(*object.Array)
+
+	if !ok {
+		t.Errorf("object is not Array. got=%T (%+v)", obj, obj)
+		return false
+	}
+
+	if result.Inspect() != expected {
+		t.Errorf("object has wrong form. got=%s, expected=%s", result.Inspect(), expected)
+		return false
+	}
+
+	return true
+}
+
 func testNullObject(t *testing.T, obj object.Object) bool {
 	if obj != NULL {
 		t.Errorf("object is not NULL. got=%T (%+v)", obj, obj)

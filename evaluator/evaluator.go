@@ -29,6 +29,104 @@ var builtins = map[string]*object.Builtin{
 			}
 		},
 	},
+	"rest": {
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, expected=1", len(args))
+			}
+
+			switch arg := args[0].(type) {
+			case *object.Array:
+				if len(arg.Elements) > 0 {
+
+					arrLen := len(arg.Elements)
+					newArr := make([]object.Object, arrLen-1, arrLen-1)
+					copy(newArr, arg.Elements[1:])
+
+					return &object.Array{Elements: newArr}
+				}
+
+				return NULL
+			case *object.String:
+				if len(arg.Value) > 0 {
+					return &object.String{Value: arg.Value[1:]}
+				}
+
+				return NULL
+			default:
+				return newError("argument to `rest` not supported, got %s", args[0].Type())
+			}
+		},
+	},
+	"first": {
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, expected=1", len(args))
+			}
+
+			switch arg := args[0].(type) {
+			case *object.Array:
+				if len(arg.Elements) > 0 {
+					return arg.Elements[0]
+				}
+
+				return NULL
+			case *object.String:
+				if len(arg.Value) > 0 {
+					return &object.String{Value: string(arg.Value[0])}
+				}
+
+				return NULL
+			default:
+				return newError("argument to `first` not supported, got %s", args[0].Type())
+			}
+		},
+	},
+	"last": {
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, expected=1", len(args))
+			}
+
+			switch arg := args[0].(type) {
+			case *object.Array:
+				max := len(arg.Elements) - 1
+				if len(arg.Elements) > 0 {
+					return arg.Elements[max]
+				}
+
+				return NULL
+			case *object.String:
+				max := len(arg.Value) - 1
+				if len(arg.Value) > 0 {
+					return &object.String{Value: string(arg.Value[max])}
+				}
+
+				return NULL
+			default:
+				return newError("argument to `last` not supported, got %s", args[0].Type())
+			}
+		},
+	},
+	"push": {
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 2 {
+				return newError("wrong number of arguments. got=%d, expected=2", len(args))
+			}
+
+			switch arg := args[0].(type) {
+			case *object.Array:
+				length := len(arg.Elements)
+				newArr := make([]object.Object, length+1, length+1)
+				copy(newArr, arg.Elements)
+				newArr[length] = args[1]
+
+				return &object.Array{Elements: newArr}
+			default:
+				return newError("argument to `last` not supported, got %s", args[0].Type())
+			}
+		},
+	},
 	"typeof": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
