@@ -1,4 +1,4 @@
-# DODO Lang
+# Dodo Lang
 
 ---
 
