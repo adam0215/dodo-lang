@@ -32,6 +32,7 @@ const (
 
 	// Delimeters
 	COMMA     = ","
+	PERIOD    = "."
 	SEMICOLON = ";"
 
 	LPAREN   = "("

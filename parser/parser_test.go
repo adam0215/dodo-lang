@@ -267,6 +267,30 @@ func TestParsingIndexExpressions(t *testing.T) {
 	}
 }
 
+func TestDotExpression(t *testing.T) {
+	input := "myArray.len"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	dotExp, ok := stmt.Expression.(*ast.DotExpression)
+
+	if !ok {
+		t.Fatalf("exp not *ast.DotExpression. got=%T", stmt.Expression)
+	}
+
+	if !testIdentifier(t, dotExp.Left, "myArray") {
+		return
+	}
+
+	if !testIdentifier(t, dotExp.Field, "len") {
+		return
+	}
+}
+
 func TestParsingPrefixExpressions(t *testing.T) {
 	prefixTests := []struct {
 		input    string

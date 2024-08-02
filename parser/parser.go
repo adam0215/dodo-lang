@@ -17,7 +17,7 @@ const (
 	PRODUCT     // * or /
 	PREFIX      // -1 or !ok
 	CALL        // myFunc()
-	INDEX       // myArray[]
+	INDEX       // myArray[] or myArray.len
 )
 
 var precedences = map[token.TokenType]int{
@@ -31,6 +31,7 @@ var precedences = map[token.TokenType]int{
 	token.SLASH:    PRODUCT,
 	token.LPAREN:   CALL, // Enables LPAREN as infix operator in function calls, eg. add(1, 2)
 	token.LBRACKET: INDEX,
+	token.PERIOD:   INDEX,
 }
 
 type Parser struct {
@@ -82,6 +83,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.GT, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
+	p.registerInfix(token.PERIOD, p.parseDotExpression)
 
 	// Read two so that both currToken and peekToken are set
 	p.nextToken()
@@ -276,6 +278,16 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	if !p.expectPeek(token.RBRACKET) {
 		return nil
 	}
+
+	return exp
+}
+
+func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
+	exp := &ast.DotExpression{Token: p.currToken, Left: left}
+
+	p.expectPeek(token.IDENT)
+
+	exp.Field = &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
 
 	return exp
 }

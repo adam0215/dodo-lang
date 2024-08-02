@@ -237,6 +237,38 @@ func TestIndexExpressions(t *testing.T) {
 	}
 }
 
+func TestDotExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`"hello world".len`, 11},
+		{`1.len`, "argument to `len` not supported, got INTEGER"},
+		{`"hello world".doesnotexist`, "doesnotexist does not exist on STRING"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+
+		switch expected := tt.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		case string:
+			switch result := evaluated.(type) {
+			case *object.Error:
+
+				if result.Message != expected {
+					t.Errorf("wrong error message. expected=%q, got=%q", expected, result.Message)
+				}
+			case *object.String:
+				testStringObject(t, evaluated, expected)
+			}
+		default:
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
 func TestReturnStatements(t *testing.T) {
 	tests := []struct {
 		input    string

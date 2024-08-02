@@ -136,6 +136,20 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return evalIndexExpression(left, index)
+	case *ast.DotExpression:
+		left := Eval(node.Left, env)
+
+		if isError(left) {
+			return left
+		}
+
+		field := evalIdentifier(node.Field, env)
+
+		if isError(field) {
+			return newError("%s does not exist on %s", node.Field.Value, left.Type())
+		}
+
+		return evalDotExpression(left, field)
 	case *ast.FunctionLiteral:
 		params := node.Parameters
 		body := node.Body
@@ -387,6 +401,15 @@ func evalIndexExpression(array, index object.Object) object.Object {
 	}
 
 	return newError("cannot index %T", array)
+}
+
+func evalDotExpression(left, field object.Object) object.Object {
+	switch result := field.(type) {
+	case *object.Builtin:
+		return result.Fn(left)
+	}
+
+	return newError("%s does not exist on type %s", field.Inspect(), left.Type())
 }
 
 func isTruthy(obj object.Object) bool {
