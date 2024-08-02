@@ -4,7 +4,6 @@ import (
 	"dodo-lang/lexer"
 	"dodo-lang/object"
 	"dodo-lang/parser"
-	"fmt"
 	"testing"
 )
 
@@ -70,6 +69,39 @@ func TestEvalBooleanExpression(t *testing.T) {
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
 		testBooleanObject(t, evaluated, tt.expected)
+	}
+}
+
+func TestEvalStringExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`"foobar"`, "foobar"},
+		{`"hello world!"`, "hello world!"},
+		{`"5"`, "5"},
+		{`"-5"`, "-5"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		testStringObject(t, evaluated, tt.expected)
+	}
+}
+
+func TestStringConcatenation(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`"foo" + "bar"`, "foobar"},
+		{`"foo" + "bar" + "baz"`, "foobarbaz"},
+		{`"foo " + "bar!"`, "foo bar!"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		testStringObject(t, evaluated, tt.expected)
 	}
 }
 
@@ -181,6 +213,10 @@ func TestErrorHandling(t *testing.T) {
 			"unknown operator: BOOLEAN + BOOLEAN",
 		},
 		{
+			`"foo" - "bar"`,
+			"unknown operator: STRING - STRING",
+		},
+		{
 			`
 if (10 > 1) {
   if (10 > 1) {
@@ -267,8 +303,7 @@ func TestFunctionApplication(t *testing.T) {
 		{"fn(x) { x; }(5)", 5},
 	}
 
-	for i, tt := range tests {
-		fmt.Printf("t%d\n", i)
+	for _, tt := range tests {
 		testIntegerObject(t, testEval(tt.input), tt.expected)
 	}
 }
@@ -302,6 +337,22 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 
 	if result.Value != expected {
 		t.Errorf("object has wrong value. got=%d, expected=%d", result.Value, expected)
+		return false
+	}
+
+	return true
+}
+
+func testStringObject(t *testing.T, obj object.Object, expected string) bool {
+	result, ok := obj.(*object.String)
+
+	if !ok {
+		t.Errorf("object is not String. got=%T (%+v)", obj, obj)
+		return false
+	}
+
+	if result.Value != expected {
+		t.Errorf("object has wrong value. got=%s, expected=%s", result.Value, expected)
 		return false
 	}
 
