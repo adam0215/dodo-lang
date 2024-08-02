@@ -318,6 +318,42 @@ func TestClosures(t *testing.T) {
 	testIntegerObject(t, testEval(input), 4)
 }
 
+func TestBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected any
+	}{
+		{`len("")`, 0},
+		{`len("four")`, 4},
+		{`len("hello world")`, 11},
+		{`len(1)`, "argument to `len` not supported, got INTEGER"},
+		{`len("one", "two")`, "wrong number of arguments. got=2, expected=1"},
+		{`typeof("hello world")`, "STRING"},
+		{`typeof(9)`, "INTEGER"},
+		{`typeof(fn (x) { 420; })`, "FUNCTION"},
+		{`typeof(len)`, "BUILTIN"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+
+		switch expected := tt.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		case string:
+			switch result := evaluated.(type) {
+			case *object.Error:
+
+				if result.Message != expected {
+					t.Errorf("wrong error message. expected=%q, got=%q", expected, result.Message)
+				}
+			case *object.String:
+				testStringObject(t, result, string(expected))
+			}
+		}
+	}
+}
+
 func testEval(input string) object.Object {
 	l := lexer.New(input)
 	p := parser.New(l)
