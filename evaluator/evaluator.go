@@ -38,6 +38,19 @@ var builtins = map[string]*object.Builtin{
 			return &object.String{Value: string(arg.Type())}
 		},
 	},
+	"println": {
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, expected=1", len(args))
+			}
+
+			arg := args[0].(object.Object)
+
+			fmt.Printf("%s\n", arg.Inspect())
+
+			return &object.Null{}
+		},
+	},
 }
 
 func Eval(node ast.Node, env *object.Environment) object.Object {

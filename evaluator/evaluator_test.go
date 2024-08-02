@@ -1,9 +1,11 @@
 package evaluator
 
 import (
+	"bytes"
 	"dodo-lang/lexer"
 	"dodo-lang/object"
 	"dodo-lang/parser"
+	"os"
 	"testing"
 )
 
@@ -332,10 +334,18 @@ func TestBuiltinFunction(t *testing.T) {
 		{`typeof(9)`, "INTEGER"},
 		{`typeof(fn (x) { 420; })`, "FUNCTION"},
 		{`typeof(len)`, "BUILTIN"},
+		{`typeof("one", "two")`, "wrong number of arguments. got=2, expected=1"},
+		{`println("hello world")`, "hello world\n"},
+		{`println(9)`, "9\n"},
 	}
 
 	for _, tt := range tests {
+		pipeReader, pipeWriter, _ := os.Pipe()
+		os.Stdout = pipeWriter
+
 		evaluated := testEval(tt.input)
+
+		pipeWriter.Close()
 
 		switch expected := tt.expected.(type) {
 		case int:
@@ -349,6 +359,15 @@ func TestBuiltinFunction(t *testing.T) {
 				}
 			case *object.String:
 				testStringObject(t, result, string(expected))
+
+			case *object.Null:
+				var buf bytes.Buffer
+				buf.ReadFrom(pipeReader)
+				capturedStd := buf.String()
+
+				if capturedStd != expected {
+					t.Errorf("wrong std message. expected=%q, got=%q", expected, capturedStd)
+				}
 			}
 		}
 	}
