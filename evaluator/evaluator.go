@@ -180,6 +180,8 @@ var builtins = map[string]*object.Builtin{
 					templateArgs = append(templateArgs, a.Value)
 				case *object.Integer:
 					templateArgs = append(templateArgs, a.Value)
+				default:
+					return newError("only strings and integers can be used with 'printf'. got=%s", a.Type())
 				}
 			}
 
