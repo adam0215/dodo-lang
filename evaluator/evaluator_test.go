@@ -421,8 +421,8 @@ func TestBuiltinFunction(t *testing.T) {
 		{`typeof(fn (x) { 420; })`, "FUNCTION"},
 		{`typeof(len)`, "BUILTIN"},
 		{`typeof("one", "two")`, "wrong number of arguments. got=2, expected=1"},
-		{`println("hello world")`, "hello world\n"},
-		{`println(9)`, "9\n"},
+		{`debug("hello world")`, "hello world\n"},
+		{`debug(9)`, "9\n"},
 	}
 
 	for _, tt := range tests {
