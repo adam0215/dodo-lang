@@ -1,3 +1,7 @@
+<p>
+  <img src="./dodo_banner.svg" alt="Dodo Programming Language">
+</p>
+
 # Dodo Lang
 
 ---
