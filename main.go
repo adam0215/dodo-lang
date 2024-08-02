@@ -9,9 +9,11 @@ import (
 )
 
 var filename string
+var verbose bool
 
 func init() {
 	flag.StringVar(&filename, "f", "", "Dodo file to run")
+	flag.BoolVar(&verbose, "v", false, "Verbose mode")
 	flag.Parse()
 }
 
@@ -24,11 +26,11 @@ func main() {
 
 	if filename != "" {
 		// REPL / File mode
-		repl.FileMode(os.Stdin, os.Stdout, filename)
+		repl.FileMode(os.Stdin, os.Stdout, filename, verbose)
 	} else {
 		// REPL / Interactive mode
 		fmt.Printf("\nHello %s! You are now running the Dodo programming language.\n", user.Username)
 		fmt.Printf("Now, type some commands below :)\n\n")
-		repl.InteractiveMode(os.Stdin, os.Stdout)
+		repl.InteractiveMode(os.Stdin, os.Stdout, verbose)
 	}
 }

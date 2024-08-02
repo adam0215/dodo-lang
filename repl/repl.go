@@ -9,15 +9,21 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 )
 
 type ExecMode = string
 
 const PROMPT = "\n>> "
 
-func InteractiveMode(in io.Reader, out io.Writer) {
+func InteractiveMode(in io.Reader, out io.Writer, verbose bool) {
 	scanner := bufio.NewScanner(in)
 	env := object.NewEnvironment()
+
+	// disable input buffering
+	exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
+	// do not display entered characters on the screen
+	exec.Command("stty", "-F", "/dev/tty", "-echo").Run()
 
 	for {
 		fmt.Fprintf(out, PROMPT)
@@ -33,21 +39,25 @@ func InteractiveMode(in io.Reader, out io.Writer) {
 
 		program := p.ParseProgram()
 
-		if len(p.Errors()) != 0 {
+		if len(p.Errors()) != 0 && verbose {
 			printParserErrors(out, p.Errors())
 			continue
 		}
 
-		evaluated := evaluator.Eval(program, env)
-
-		if evaluated != nil {
-			io.WriteString(out, evaluated.Inspect())
-			io.WriteString(out, "\n")
+		switch evaluated := evaluator.Eval(program, env).(type) {
+		case *object.Error:
+			if verbose && evaluated != nil {
+				io.WriteString(out, fmt.Sprintf("%s", evaluated.Inspect()))
+			}
+		default:
+			if evaluated != nil {
+				io.WriteString(out, fmt.Sprintf("%s", evaluated.Inspect()))
+			}
 		}
 	}
 }
 
-func FileMode(in io.Reader, out io.Writer, filename string) {
+func FileMode(in io.Reader, out io.Writer, filename string, verbose bool) {
 	content, err := os.ReadFile(filename)
 
 	if err != nil {
@@ -60,15 +70,19 @@ func FileMode(in io.Reader, out io.Writer, filename string) {
 	program := p.ParseProgram()
 	env := object.NewEnvironment()
 
-	if len(p.Errors()) != 0 {
+	if len(p.Errors()) != 0 && verbose {
 		printParserErrors(out, p.Errors())
 	}
 
-	evaluated := evaluator.Eval(program, env)
-
-	if evaluated != nil {
-		io.WriteString(out, evaluated.Inspect())
-		io.WriteString(out, "\n")
+	switch evaluated := evaluator.Eval(program, env).(type) {
+	case *object.Error:
+		if verbose && evaluated != nil {
+			io.WriteString(out, fmt.Sprintf("%s", evaluated.Inspect()))
+		}
+	default:
+		if evaluated != nil {
+			io.WriteString(out, fmt.Sprintf("%s", evaluated.Inspect()))
+		}
 	}
 }
 
