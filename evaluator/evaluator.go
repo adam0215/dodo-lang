@@ -30,8 +30,6 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		env.Set(node.Name.Value, val)
-		// TODO keep this?
-		fmt.Printf("<bound '%s'>\n", node.Name.Value)
 
 	case *ast.ReturnStatement:
 		val := Eval(node.ReturnValue, env)

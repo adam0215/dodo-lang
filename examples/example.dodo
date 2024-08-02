@@ -1,0 +1,5 @@
+let add = fn(x, y) { x + y; };
+let sub = fn(x, y) { x - y; };
+let exec = fn(x, y, func) { func(x, y); }
+
+exec(96, 42, sub);

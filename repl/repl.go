@@ -8,11 +8,14 @@ import (
 	"dodo-lang/parser"
 	"fmt"
 	"io"
+	"os"
 )
+
+type ExecMode = string
 
 const PROMPT = "\n>> "
 
-func Start(in io.Reader, out io.Writer) {
+func InteractiveMode(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 	env := object.NewEnvironment()
 
@@ -41,6 +44,31 @@ func Start(in io.Reader, out io.Writer) {
 			io.WriteString(out, evaluated.Inspect())
 			io.WriteString(out, "\n")
 		}
+	}
+}
+
+func FileMode(in io.Reader, out io.Writer, filename string) {
+	content, err := os.ReadFile(filename)
+
+	if err != nil {
+		panic(err)
+	}
+
+	l := lexer.New(string(content))
+	p := parser.New(l)
+
+	program := p.ParseProgram()
+	env := object.NewEnvironment()
+
+	if len(p.Errors()) != 0 {
+		printParserErrors(out, p.Errors())
+	}
+
+	evaluated := evaluator.Eval(program, env)
+
+	if evaluated != nil {
+		io.WriteString(out, evaluated.Inspect())
+		io.WriteString(out, "\n")
 	}
 }
 
