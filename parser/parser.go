@@ -66,6 +66,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
+	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 
 	// Infix parse functions
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -256,6 +257,37 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 	return &ast.StringLiteral{Token: p.currToken, Value: p.currToken.Literal}
 }
 
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	exp := &ast.ArrayLiteral{Token: p.currToken}
+	exp.Elements = p.parseExpressionList(token.RBRACKET, token.COMMA)
+	return exp
+}
+
+func (p *Parser) parseExpressionList(end token.TokenType, separator token.TokenType) []ast.Expression {
+	elements := []ast.Expression{}
+
+	if p.peekTokenIs(end) {
+		p.nextToken()
+		return elements
+	}
+
+	p.nextToken()
+	elements = append(elements, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(separator) {
+		p.nextToken()
+		p.nextToken()
+
+		elements = append(elements, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(end) {
+		return nil
+	}
+
+	return elements
+}
+
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	expression := &ast.PrefixExpression{Token: p.currToken, Operator: p.currToken.Literal}
 
@@ -396,33 +428,8 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.currToken, Function: function}
-	exp.Arguments = p.parseCallArguments()
+	exp.Arguments = p.parseExpressionList(token.RPAREN, token.COMMA)
 	return exp
-}
-
-func (p *Parser) parseCallArguments() []ast.Expression {
-	args := []ast.Expression{}
-
-	if p.peekTokenIs(token.RPAREN) {
-		p.nextToken()
-		return args
-	}
-
-	p.nextToken()
-	args = append(args, p.parseExpression(LOWEST))
-
-	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
-
-		args = append(args, p.parseExpression(LOWEST))
-	}
-
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
-
-	return args
 }
 
 func (p *Parser) currTokenIs(t token.TokenType) bool {
