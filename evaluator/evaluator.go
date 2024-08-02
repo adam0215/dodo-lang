@@ -86,10 +86,18 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalIdentifier(node, env)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
-	case *ast.StringLiteral:
-		return &object.String{Value: node.Value}
 	case *ast.Boolean:
 		return nativeBooleanToBooleanObject(node.Value)
+	case *ast.StringLiteral:
+		return &object.String{Value: node.Value}
+	case *ast.ArrayLiteral:
+		elements := evalExpressions(node.Elements, env)
+
+		if len(elements) == 1 && isError(elements[0]) {
+			return elements[0]
+		}
+
+		return &object.Array{Elements: elements}
 	case *ast.PrefixExpression:
 		right := Eval(node.Right, env)
 
@@ -114,6 +122,20 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalInfixExpression(node.Operator, left, right)
 	case *ast.IfExpression:
 		return evalIfExpression(node, env)
+	case *ast.IndexExpression:
+		left := Eval(node.Left, env)
+
+		if isError(left) {
+			return left
+		}
+
+		index := Eval(node.Index, env)
+
+		if isError(index) {
+			return index
+		}
+
+		return evalIndexExpression(left, index)
 	case *ast.FunctionLiteral:
 		params := node.Parameters
 		body := node.Body
@@ -335,6 +357,36 @@ func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Enviro
 	}
 
 	return env
+}
+
+func evalIndexExpression(array, index object.Object) object.Object {
+	idx := index.(*object.Integer).Value
+
+	switch result := array.(type) {
+	case *object.Array:
+		max := int64(len(result.Elements) - 1)
+
+		if idx == -1 {
+			return result.Elements[max]
+		} else if idx < 0 || idx > max {
+			return NULL
+		}
+
+		return result.Elements[idx]
+
+	case *object.String:
+		max := int64(len(result.Value) - 1)
+
+		if idx == -1 {
+			return &object.String{Value: string(result.Value[max])}
+		} else if idx < 0 || idx > max {
+			return NULL
+		}
+
+		return &object.String{Value: string(result.Value[idx])}
+	}
+
+	return newError("cannot index %T", array)
 }
 
 func isTruthy(obj object.Object) bool {
