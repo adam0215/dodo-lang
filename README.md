@@ -12,3 +12,6 @@ The following are additional features I've added or things I've changed in the l
 1. Ability to call built in functions on objects using dot syntax.
 1. A typeof() function.
 1. A preliminary debug() print function.
+
+---
+This project was just for learning and not intended to be production-ready in any way.
