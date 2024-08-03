@@ -34,6 +34,8 @@ func TestNextToken(t *testing.T) {
 
 	[1, 2].len;
 
+	{"key": "value", true: "boolean", 99: 1};
+
 	for (10 > 5) {
 		return true;
 	}
@@ -136,6 +138,20 @@ func TestNextToken(t *testing.T) {
 		{token.RBRACKET, "]"},
 		{token.PERIOD, "."},
 		{token.IDENT, "len"},
+		{token.SEMICOLON, ";"},
+		{token.LCURLY, "{"},
+		{token.STRING, "key"},
+		{token.COLON, ":"},
+		{token.STRING, "value"},
+		{token.COMMA, ","},
+		{token.TRUE, "true"},
+		{token.COLON, ":"},
+		{token.STRING, "boolean"},
+		{token.COMMA, ","},
+		{token.INT, "99"},
+		{token.COLON, ":"},
+		{token.INT, "1"},
+		{token.RCURLY, "}"},
 		{token.SEMICOLON, ";"},
 		{token.FOR, "for"},
 		{token.LPAREN, "("},

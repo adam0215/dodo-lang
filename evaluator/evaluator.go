@@ -238,6 +238,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return &object.Array{Elements: elements}
+	case *ast.HashLiteral:
+		return evalHashLiteral(node, env)
 	case *ast.PrefixExpression:
 		right := Eval(node.Right, env)
 
@@ -262,8 +264,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalInfixExpression(node.Operator, left, right)
 	case *ast.IfExpression:
 		return evalIfExpression(node, env)
-	case *ast.ForExpression:
-		return evalForExpression(node, env)
+	// case *ast.ForExpression:
+	// 	return evalForExpression(node, env)
 	case *ast.IndexExpression:
 		left := Eval(node.Left, env)
 
@@ -553,34 +555,72 @@ func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Enviro
 	return env
 }
 
-func evalIndexExpression(array, index object.Object) object.Object {
-	idx := index.(*object.Integer).Value
-
-	switch result := array.(type) {
-	case *object.Array:
-		max := int64(len(result.Elements) - 1)
-
-		if idx == -1 {
-			return result.Elements[max]
-		} else if idx < 0 || idx > max {
-			return NULL
-		}
-
-		return result.Elements[idx]
-
-	case *object.String:
-		max := int64(len(result.Value) - 1)
-
-		if idx == -1 {
-			return &object.String{Value: string(result.Value[max])}
-		} else if idx < 0 || idx > max {
-			return NULL
-		}
-
-		return &object.String{Value: string(result.Value[idx])}
+func evalIndexExpression(left, index object.Object) object.Object {
+	switch {
+	case left.Type() == object.ARRAY_OBJ && index.Type() == object.INTEGER_OBJ:
+		return evalArrayIndexExpression(left, index)
+	case left.Type() == object.HASH_OBJ:
+		return evalHashMapIndexExpression(left, index)
+	case left.Type() == object.STRING_OBJ:
+		return evalStringIndexExpression(left, index)
 	}
 
-	return newError("cannot index %T", array)
+	return newError("cannot index %T", left)
+}
+
+func evalArrayIndexExpression(array, index object.Object) object.Object {
+	arr := array.(*object.Array)
+	idx, ok := index.(*object.Integer)
+
+	if !ok {
+		return newError("type of %s cannot be used to index %s", index.Type(), arr.Type())
+	}
+
+	max := int64(len(arr.Elements) - 1)
+
+	if idx.Value == -1 {
+		return arr.Elements[max]
+	} else if idx.Value < 0 || idx.Value > max {
+		return NULL
+	}
+
+	return arr.Elements[idx.Value]
+}
+
+func evalHashMapIndexExpression(hashMap, index object.Object) object.Object {
+	hashObject := hashMap.(*object.HashMap)
+	key, ok := index.(object.Hashable)
+
+	if !ok {
+		return newError("type of %s cannot be used as hash key", index.Type())
+	}
+
+	pair, ok := hashObject.Pairs[key.HashKey()]
+
+	if !ok {
+		return NULL
+	}
+
+	return pair.Value
+}
+
+func evalStringIndexExpression(str, index object.Object) object.Object {
+	strObject := str.(*object.String)
+	idx, ok := index.(*object.Integer)
+
+	if !ok {
+		return newError("type of %s cannot be used to index %s", index.Type(), strObject.Type())
+	}
+
+	max := int64(len(strObject.Value) - 1)
+
+	if idx.Value == -1 {
+		return &object.String{Value: string(strObject.Value[max])}
+	} else if idx.Value < 0 || idx.Value > max {
+		return NULL
+	}
+
+	return &object.String{Value: string(strObject.Value[idx.Value])}
 }
 
 func evalDotExpression(left, fn object.Object, args []object.Object) object.Object {
@@ -591,6 +631,35 @@ func evalDotExpression(left, fn object.Object, args []object.Object) object.Obje
 	}
 
 	return newError("%s does not exist on type %s", fn.Inspect(), left.Type())
+}
+
+func evalHashLiteral(node *ast.HashLiteral, env *object.Environment) object.Object {
+	pairs := make(map[object.HashKey]object.HashPair)
+
+	for keyNode, valueNode := range node.Pairs {
+		key := Eval(keyNode, env)
+
+		if isError(key) {
+			return key
+		}
+
+		hashKey, ok := key.(object.Hashable)
+
+		if !ok {
+			return newError("type of '%s' cannot be used as hash key", key.Type())
+		}
+
+		value := Eval(valueNode, env)
+
+		if isError(value) {
+			return value
+		}
+
+		hashed := hashKey.HashKey()
+		pairs[hashed] = object.HashPair{Key: key, Value: value}
+	}
+
+	return &object.HashMap{Pairs: pairs}
 }
 
 func isTruthy(obj object.Object) bool {

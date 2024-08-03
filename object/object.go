@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"dodo-lang/ast"
 	"fmt"
+	"hash/fnv"
 	"strconv"
 	"strings"
 )
@@ -15,6 +16,7 @@ const (
 	BOOLEAN_OBJ      = "BOOLEAN"
 	STRING_OBJ       = "STRING"
 	ARRAY_OBJ        = "ARRAY"
+	HASH_OBJ         = "HASH"
 	FUNCTION_OBJ     = "FUNCTION"
 	BUILTIN_OBJ      = "BUILTIN"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
@@ -122,3 +124,66 @@ type Builtin struct {
 
 func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
 func (b *Builtin) Inspect() string  { return "built in function" }
+
+type HashKey struct {
+	// TODO: Cache the return values of the HashKey() functions for optimization
+	Type  ObjectType
+	Value uint64
+}
+
+type Hashable interface {
+	HashKey() HashKey
+}
+
+func (b *Boolean) HashKey() HashKey {
+	var value uint64
+
+	if b.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+
+	return HashKey{Type: b.Type(), Value: value}
+}
+
+func (i *Integer) HashKey() HashKey {
+	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
+}
+
+func (s *String) HashKey() HashKey {
+	// Small possibility exists that fnv generates the same hash for different strings
+	// with different content, resulting in a hash collision. This should be mitigated
+	// but is currently out of scope for this language.
+	h := fnv.New64a()
+	h.Write([]byte(s.Value))
+
+	return HashKey{Type: s.Type(), Value: h.Sum64()}
+}
+
+type HashPair struct {
+	Key   Object
+	Value Object
+}
+
+type HashMap struct {
+	Pairs map[HashKey]HashPair
+}
+
+func (hm *HashMap) Type() ObjectType { return HASH_OBJ }
+
+func (hm *HashMap) Inspect() string {
+	var out bytes.Buffer
+
+	pairs := []string{}
+
+	for _, pair := range hm.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s: %s", pair.Key.Inspect(), pair.Value.Inspect()))
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+
+	return out.String()
+}
