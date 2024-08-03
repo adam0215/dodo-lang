@@ -2,4 +2,38 @@ let add = fn(x, y) { x + y; };
 let sub = fn(x, y) { x - y; };
 let exec = fn(x, y, func) { func(x, y); }
 
-exec(96, 42, sub);
+let result = exec(96, 42, sub);
+
+printf("%d - %d = %d", 96, 42, result);
+
+let fold = fn(arr, init, f) {
+  let iter = fn(arr, result) {
+    if (len(arr) == 0) {
+      return result;
+    } else {
+      iter(rest(arr), f(result, first(arr)));
+    }
+  }
+
+  iter(arr, init);
+}
+
+let sum = fn(arr) {
+  fold(arr, 0, fn(init, el) { init + el; })
+}
+
+printf("SUM: %d", sum([1, 2, 3, 4, 5]));
+
+let foreach = fn(arr, f) {
+  let iter = fn(arr, result) {
+    if (len(arr) == 0) {
+      return result;
+    } else {
+      iter(rest(arr), f(first(arr)));
+    }
+  }
+
+  iter(arr, arr);
+}
+
+foreach([1, 2, 3, 4, 5], fn(el) { println(el); });
