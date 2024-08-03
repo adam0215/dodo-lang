@@ -16,7 +16,7 @@ const (
 	BOOLEAN_OBJ      = "BOOLEAN"
 	STRING_OBJ       = "STRING"
 	ARRAY_OBJ        = "ARRAY"
-	HASH_OBJ         = "HASH"
+	HASHMAP_OBJ      = "HASHMAP"
 	FUNCTION_OBJ     = "FUNCTION"
 	BUILTIN_OBJ      = "BUILTIN"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
@@ -170,7 +170,7 @@ type HashMap struct {
 	Pairs map[HashKey]HashPair
 }
 
-func (hm *HashMap) Type() ObjectType { return HASH_OBJ }
+func (hm *HashMap) Type() ObjectType { return HASHMAP_OBJ }
 
 func (hm *HashMap) Inspect() string {
 	var out bytes.Buffer

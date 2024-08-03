@@ -559,7 +559,7 @@ func evalIndexExpression(left, index object.Object) object.Object {
 	switch {
 	case left.Type() == object.ARRAY_OBJ && index.Type() == object.INTEGER_OBJ:
 		return evalArrayIndexExpression(left, index)
-	case left.Type() == object.HASH_OBJ:
+	case left.Type() == object.HASHMAP_OBJ:
 		return evalHashMapIndexExpression(left, index)
 	case left.Type() == object.STRING_OBJ:
 		return evalStringIndexExpression(left, index)
