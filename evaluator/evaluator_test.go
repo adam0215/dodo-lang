@@ -170,6 +170,33 @@ func TestIfElseExpressions(t *testing.T) {
 	}
 }
 
+// func TestForExpressions(t *testing.T) {
+// 	tests := []struct {
+// 		input    string
+// 		expected interface{}
+// 	}{
+// 		{`let count = 0;
+
+// 		  for (count < 10) {
+// 		    let count = count + 1;
+// 		  }
+
+// 		  count;
+// 			`, 10},
+// 	}
+
+// 	for _, tt := range tests {
+// 		evaluated := testEval(tt.input)
+// 		integer, ok := tt.expected.(int)
+
+// 		if ok {
+// 			testIntegerObject(t, evaluated, int64(integer))
+// 		} else {
+// 			testNullObject(t, evaluated)
+// 		}
+// 	}
+// }
+
 func TestIndexExpressions(t *testing.T) {
 	tests := []struct {
 		input    string

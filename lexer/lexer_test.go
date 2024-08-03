@@ -33,6 +33,10 @@ func TestNextToken(t *testing.T) {
 	foobar[2];
 
 	[1, 2].len;
+
+	for (10 > 5) {
+		return true;
+	}
 	`
 
 	tests := []struct {
@@ -133,6 +137,17 @@ func TestNextToken(t *testing.T) {
 		{token.PERIOD, "."},
 		{token.IDENT, "len"},
 		{token.SEMICOLON, ";"},
+		{token.FOR, "for"},
+		{token.LPAREN, "("},
+		{token.INT, "10"},
+		{token.GT, ">"},
+		{token.INT, "5"},
+		{token.RPAREN, ")"},
+		{token.LCURLY, "{"},
+		{token.RETURN, "return"},
+		{token.TRUE, "true"},
+		{token.SEMICOLON, ";"},
+		{token.RCURLY, "}"},
 		{token.EOF, ""},
 	}
 

@@ -79,10 +79,6 @@ func FileMode(in io.Reader, out io.Writer, filename string, verbose bool) {
 		if verbose && evaluated != nil {
 			io.WriteString(out, fmt.Sprintf("%s", evaluated.Inspect()))
 		}
-	default:
-		if evaluated != nil {
-			io.WriteString(out, fmt.Sprintf("%s", evaluated.Inspect()))
-		}
 	}
 }
 
