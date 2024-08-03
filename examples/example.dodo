@@ -8,10 +8,10 @@ printf("%d - %d = %d", 96, 42, result);
 
 let fold = fn(arr, init, f) {
   let iter = fn(arr, result) {
-    if (len(arr) == 0) {
+    if (arr.len() == 0) {
       return result;
     } else {
-      iter(rest(arr), f(result, first(arr)));
+      iter(arr.rest(), f(result, arr.first()));
     }
   }
 
@@ -26,10 +26,10 @@ printf("SUM: %d", sum([1, 2, 3, 4, 5]));
 
 let foreach = fn(arr, f) {
   let iter = fn(arr, result) {
-    if (len(arr) == 0) {
+    if (arr.len() == 0) {
       return result;
     } else {
-      iter(rest(arr), f(first(arr)));
+      iter(arr.rest(), f(arr.first()));
     }
   }
 
