@@ -6,12 +6,15 @@ Dodo Lang is an extended/modified version of the Monkey Programming Language and
 
 The following are additional features I've added or things I've changed in the language.
 
+1. Conditional loops using the "for" keyword, like in Go.
 1. Ability to pick a character in a string by index.
 1. Ability to quickly get the last element of an array or string by using index -1.
 1. Ability to run .dodo files using the -f <filename> flag.
 1. Ability to call built in functions on objects using dot syntax.
 1. A typeof() function.
 1. A preliminary debug() print function.
+1. Improved the interactive mode/terminal REPL with some autocomplete, double parenthesis/bracket completion and colored output.
 
 ---
+
 This project was just for learning and not intended to be production-ready in any way.

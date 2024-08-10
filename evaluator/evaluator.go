@@ -264,8 +264,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalInfixExpression(node.Operator, left, right)
 	case *ast.IfExpression:
 		return evalIfExpression(node, env)
-	// case *ast.ForExpression:
-	// 	return evalForExpression(node, env)
+	case *ast.ForExpression:
+		return evalForExpression(node, env)
 	case *ast.IndexExpression:
 		left := Eval(node.Left, env)
 
@@ -461,38 +461,38 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Obje
 }
 
 func evalForExpression(ie *ast.ForExpression, env *object.Environment) object.Object {
-	// TODO: Evaluate the whole AST on every loop? (probably more efficient solutions)
+	// TODO: Add variable reassignment and enclose loops in their own environments
 
 	condition := Eval(ie.Condition, env)
-	result := Eval(ie.Body, env)
+	var result object.Object = NULL
 
 	if isError(condition) {
 		return condition
 	}
 
-	if isError(result) {
-		return result
-	}
-
-	for isTruthy(condition) {
+	for {
 		condition = Eval(ie.Condition, env)
-		result = Eval(ie.Body, env)
 
 		if isError(condition) {
 			return condition
 		}
 
+		if !isTruthy(condition) {
+			break
+		}
+
+		result = Eval(ie.Body, env)
+
 		if isError(result) {
 			return result
 		}
 
-		if condition.Type() == object.RETURN_VALUE_OBJ || condition.Type() == object.ERROR_OBJ {
-			return condition
+		if rv, isReturnValue := result.(*object.ReturnValue); isReturnValue {
+			return rv.Value
 		}
-		fmt.Printf("LOOP %s %s\n", condition.Inspect(), result.Inspect())
 	}
 
-	return result
+	return NULL
 }
 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
