@@ -1,0 +1,139 @@
+package cli
+
+import (
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+	"unsafe"
+)
+
+const (
+	// TODO: Make more elegant solution :)
+	UP_ARROW    = "[27 91 65]"
+	DOWN_ARROW  = "[27 91 66]"
+	LEFT_ARROW  = "[27 91 68]"
+	RIGHT_ARROW = "[27 91 67]"
+	ENTER       = "[13]"
+	BACKSPACE   = "[127]"
+	ESC         = "[27]"
+)
+
+type Cli struct{}
+
+func New() *Cli {
+	return &Cli{}
+}
+
+func (c *Cli) Init(prompt string) {
+	// Save the original terminal state
+	originalState, err := getTerminalState()
+
+	if err != nil {
+		fmt.Println("Error getting terminal state:", err)
+		return
+	}
+
+	defer restoreTerminalState(originalState)
+
+	// Channel to listen for interrupt signals
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		// IMPORTANT, RESTORE TERMINAL STATE
+		restoreTerminalState(originalState)
+		os.Exit(0)
+	}()
+
+	// Set terminal to raw mode
+	err = setRawMode()
+
+	if err != nil {
+		fmt.Println("Error terminal state to raw mode:", err)
+		return
+	}
+
+	var buf [3]byte
+	fmt.Print(prompt)
+
+	for {
+		// Read one byte at a time
+		n, err := os.Stdin.Read(buf[:])
+		seq := buf[:n]
+
+		if err != nil {
+			fmt.Println("Error reading from stdin:", err)
+			break
+		}
+
+		// I only know about 1 and 3 byte sequences right now
+		// so skip the others.
+		if len(seq) != 1 && len(seq) != 3 {
+			continue
+		}
+
+		seqAsStr := fmt.Sprintf("%v", seq)
+
+		//fmt.Print(seqAsStr)
+
+		switch seqAsStr {
+		case UP_ARROW:
+		case DOWN_ARROW:
+		case LEFT_ARROW:
+			fmt.Print("\033[D")
+			os.Stdout.Sync()
+		case RIGHT_ARROW:
+			fmt.Print("\033[C")
+			os.Stdout.Sync()
+		case ENTER:
+			// Clear screen
+			fmt.Print("\033[H\033[2J")
+			fmt.Print(prompt)
+		case BACKSPACE:
+		case ESC:
+			sigChan <- syscall.SIGTERM
+		default:
+			fmt.Print(string(seq[0]))
+		}
+	}
+}
+
+func getTerminalState() (*syscall.Termios, error) {
+	var state syscall.Termios
+	_, _, errno := syscall.Syscall6(syscall.SYS_IOCTL, uintptr(syscall.Stdin), uintptr(syscall.TIOCGETA), uintptr(unsafe.Pointer(&state)), 0, 0, 0)
+
+	if errno != 0 {
+		return nil, errno
+	}
+
+	return &state, nil
+}
+
+func restoreTerminalState(state *syscall.Termios) {
+	_, _, errno := syscall.Syscall6(syscall.SYS_IOCTL, uintptr(syscall.Stdin), uintptr(syscall.TIOCSETA), uintptr(unsafe.Pointer(state)), 0, 0, 0)
+	if errno != 0 {
+		fmt.Println("Error restoring terminal state:", errno)
+	}
+}
+
+func setRawMode() error {
+	state, err := getTerminalState()
+
+	if err != nil {
+		return err
+	}
+
+	state.Lflag &^= syscall.ICANON | syscall.ECHO // disable canonical mode and echo
+	state.Iflag &^= syscall.ICRNL                 // disable carriage return to newline translation
+	state.Cc[syscall.VMIN] = 1                    // minimum number of characters for noncanonical read
+	state.Cc[syscall.VTIME] = 0                   // timeout for noncanonical read
+	_, _, errno := syscall.Syscall6(syscall.SYS_IOCTL, uintptr(syscall.Stdin), uintptr(syscall.TIOCSETA), uintptr(unsafe.Pointer(state)), 0, 0, 0)
+
+	if errno != 0 {
+		return errno
+	}
+
+	return nil
+}

@@ -5,6 +5,7 @@ import (
 	"dodo-lang/lexer"
 	"dodo-lang/token"
 	"fmt"
+	"io"
 	"strconv"
 )
 
@@ -536,4 +537,20 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 		p.peekError(t)
 		return false
 	}
+}
+
+func (p *Parser) PrintParserErrors(out io.Writer) {
+	for _, msg := range p.errors {
+		io.WriteString(out, "\t"+msg+"\n")
+	}
+}
+
+func (p *Parser) GetParserErrors() []string {
+	var errors []string
+
+	for _, msg := range p.errors {
+		errors = append(errors, msg)
+	}
+
+	return errors
 }
