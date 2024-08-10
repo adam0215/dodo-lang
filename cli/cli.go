@@ -39,7 +39,6 @@ type (
 )
 
 type model struct {
-	input        string
 	output       string
 	prompt       string
 	history      []string
