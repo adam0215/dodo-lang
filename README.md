@@ -16,6 +16,69 @@ The following are additional features I've added or things I've changed in the l
 1. A preliminary debug() print function.
 1. Improved the interactive mode/terminal REPL with some autocomplete, double parenthesis/bracket completion and colored output.
 
+## Examples
+
+### Variables
+
+```rust
+let foo = "Hello World!";
+let bar = 10;
+let baz = [1, 2, 3, 4];
+let foobarbaz = {"country": "France", "capital": "Paris"};
+```
+
+### If Statements
+
+```rust
+let foo = 8;
+
+let result = if (10 > foo) {
+    return true;
+} else {
+    return false;
+}
+```
+
+### Functions
+
+```rust
+let add = fn(x, y) { x + y };
+
+add(10, 5);
+
+let newAdder = fn(x) { fn(y) { x + y }; };
+let addTwo = newAdder(2);
+
+addTwo(2);
+```
+
+### Built-in Functions and Dot Syntax
+
+```rust
+println("Hello World");
+printf("Hello %s", "World");
+
+len("How long am I?");
+"How long am I?".len();
+
+len([1, 2, 3, 4]);
+[1, 2, 3].push(4);
+[1, 2, 3].first();
+[1, 2, 3].last();
+[1, 2, 3].rest();
+
+typeof([4, 5, 6])
+```
+
+### _(WIP)_ Pipe Operator
+
+```rust
+let add = fn(x, y) { x + y };
+let sub = fn(x, y) { x - y };
+
+sub(10, 3) |> add(5, $);
+```
+
 ---
 
 This project was just for learning and not intended to be production-ready in any way.
