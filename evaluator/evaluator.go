@@ -280,23 +280,6 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return evalIndexExpression(left, index)
-	case *ast.DotExpression:
-		left := Eval(node.Left, env)
-
-		function := Eval(node.Function, env)
-
-		if isError(function) {
-			return function
-		}
-
-		args := evalExpressions(node.Arguments, env)
-
-		// Return instantly if an error is encountered when evaluating the arguments
-		if len(args) == 1 && isError(args[0]) {
-			return args[0]
-		}
-
-		return evalDotExpression(left, function, args)
 	case *ast.FunctionLiteral:
 		params := node.Parameters
 		body := node.Body
