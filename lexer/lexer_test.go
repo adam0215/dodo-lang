@@ -39,6 +39,8 @@ func TestNextToken(t *testing.T) {
 	for (10 > 5) {
 		return true;
 	}
+
+	add(5, 6) |> sub(20, $)
 	`
 
 	tests := []struct {
@@ -164,6 +166,20 @@ func TestNextToken(t *testing.T) {
 		{token.TRUE, "true"},
 		{token.SEMICOLON, ";"},
 		{token.RCURLY, "}"},
+		// add(5, 6) |> sub(20, $);
+		{token.IDENT, "add"},
+		{token.LPAREN, "("},
+		{token.INT, "5"},
+		{token.COMMA, ","},
+		{token.INT, "6"},
+		{token.RPAREN, ")"},
+		{token.PIPE, "|>"},
+		{token.IDENT, "sub"},
+		{token.LPAREN, "("},
+		{token.INT, "20"},
+		{token.COMMA, ","},
+		{token.DOLLAR, "$"},
+		{token.RPAREN, ")"},
 		{token.EOF, ""},
 	}
 

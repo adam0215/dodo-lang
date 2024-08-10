@@ -98,6 +98,15 @@ func (l *Lexer) NextToken() token.Token {
 		} else {
 			tok = newToken(token.BANG, l.ch)
 		}
+	case '|':
+		if l.peekChar() == '>' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.PIPE, Literal: literal}
+		}
+	case '$':
+		tok = newToken(token.DOLLAR, l.ch)
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF

@@ -40,7 +40,6 @@ type (
 
 type model struct {
 	output       string
-	prompt       string
 	history      []string
 	historyPos   int
 	cursorPos    int

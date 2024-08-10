@@ -18,6 +18,7 @@ const (
 	PRODUCT     // * or /
 	PREFIX      // -1 or !ok
 	CALL        // myFunc()
+	PIPE        // |>
 	INDEX       // myArray[] or myArray.len
 )
 
@@ -33,6 +34,7 @@ var precedences = map[token.TokenType]int{
 	token.LPAREN:   CALL, // Enables LPAREN as infix operator in function calls, eg. add(1, 2)
 	token.LBRACKET: INDEX,
 	token.PERIOD:   INDEX,
+	token.PIPE:     PIPE,
 }
 
 type Parser struct {
@@ -73,6 +75,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(token.LCURLY, p.parseHashLiteral)
+	p.registerPrefix(token.DOLLAR, p.parseDollarLiteral)
 
 	// Infix parse functions
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -87,6 +90,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 	p.registerInfix(token.PERIOD, p.parseDotExpression)
+	p.registerInfix(token.PIPE, p.parsePipeExpression)
 
 	// Read two so that both currToken and peekToken are set
 	p.nextToken()
@@ -265,9 +269,13 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 	return &ast.StringLiteral{Token: p.currToken, Value: p.currToken.Literal}
 }
 
+func (p *Parser) parseDollarLiteral() ast.Expression {
+	return &ast.DollarLiteral{Token: p.currToken}
+}
+
 func (p *Parser) parseArrayLiteral() ast.Expression {
 	exp := &ast.ArrayLiteral{Token: p.currToken}
-	exp.Elements = p.parseExpressionList(token.RBRACKET, token.COMMA)
+	exp.Elements = p.parseExpressionList(token.RBRACKET, token.COMMA, nil)
 	return exp
 }
 
@@ -315,7 +323,7 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
-	exp := &ast.DotExpression{Token: p.currToken, Left: left}
+	exp := &ast.CallExpression{Token: p.currToken}
 
 	p.expectPeek(token.IDENT)
 
@@ -323,12 +331,30 @@ func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
 
 	p.expectPeek(token.LPAREN)
 
-	exp.Arguments = p.parseExpressionList(token.RPAREN, token.COMMA)
+	exp.Arguments = []ast.Expression{left}
+	exp.Arguments = append(exp.Arguments, p.parseExpressionList(token.RPAREN, token.COMMA, nil)...)
 
 	return exp
 }
 
-func (p *Parser) parseExpressionList(end token.TokenType, separator token.TokenType) []ast.Expression {
+func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
+	// Pipe expressions are parsed into the result of the expression to the
+	// left of the pipe and placed instead of the dollar sign
+
+	// TODO: Make pipe expressions work for other expressions than function calls?
+
+	exp := &ast.CallExpression{Token: p.currToken}
+
+	precendence := p.currPrecedence()
+	p.nextToken()
+	exp.Function = p.parseExpression(precendence)
+	p.expectPeek(token.LPAREN)
+	exp.Arguments = p.parseExpressionList(token.RPAREN, token.COMMA, left)
+
+	return exp
+}
+
+func (p *Parser) parseExpressionList(end token.TokenType, separator token.TokenType, placeholderReplacement ast.Expression) []ast.Expression {
 	elements := []ast.Expression{}
 
 	if p.peekTokenIs(end) {
@@ -337,13 +363,22 @@ func (p *Parser) parseExpressionList(end token.TokenType, separator token.TokenT
 	}
 
 	p.nextToken()
-	elements = append(elements, p.parseExpression(LOWEST))
+
+	if placeholderReplacement != nil && p.currTokenIs(token.DOLLAR) {
+		elements = append(elements, placeholderReplacement)
+	} else {
+		elements = append(elements, p.parseExpression(LOWEST))
+	}
 
 	for p.peekTokenIs(separator) {
 		p.nextToken()
 		p.nextToken()
 
-		elements = append(elements, p.parseExpression(LOWEST))
+		if placeholderReplacement != nil && p.currTokenIs(token.DOLLAR) {
+			elements = append(elements, placeholderReplacement)
+		} else {
+			elements = append(elements, p.parseExpression(LOWEST))
+		}
 	}
 
 	if !p.expectPeek(end) {
@@ -517,7 +552,7 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.currToken, Function: function}
-	exp.Arguments = p.parseExpressionList(token.RPAREN, token.COMMA)
+	exp.Arguments = p.parseExpressionList(token.RPAREN, token.COMMA, nil)
 	return exp
 }
 

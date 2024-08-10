@@ -153,6 +153,14 @@ func (hl *HashLiteral) String() string {
 	return out.String()
 }
 
+type DollarLiteral struct {
+	Token token.Token
+}
+
+func (dl *DollarLiteral) expressionNode()      {}
+func (dl *DollarLiteral) TokenLiteral() string { return dl.Token.Literal }
+func (dl *DollarLiteral) String() string       { return dl.Token.Literal }
+
 type ArrayLiteral struct {
 	Token    token.Token
 	Elements []Expression

@@ -23,12 +23,15 @@ const (
 	BANG     = "!"
 	ASTERISK = "*"
 	SLASH    = "/"
+	DOLLAR   = "$"
 
 	LT = "<"
 	GT = ">"
 
 	EQ     = "=="
 	NOT_EQ = "!="
+
+	PIPE = "|>"
 
 	// Delimeters
 	COMMA     = ","

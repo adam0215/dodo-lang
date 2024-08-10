@@ -315,6 +315,49 @@ func TestDotExpressions(t *testing.T) {
 	}
 }
 
+func TestPipeExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`let add = fn(x, y) {x + y};
+		  let result = 5 |> add(10, $);
+
+		  result;`, 15},
+		{`let add = fn(x, y) {x + y};
+		  let sub = fn(x, y) {x - y};
+		  let result = sub(10, 3) |> add($, 10);
+
+		  result;`, 17},
+		{`"hello".len() |> push([1, 2, 3, 4], $)`, "[1, 2, 3, 4, 5]"},
+		{`4 |> [1, 2, 3].push($)`, "[1, 2, 3, 4]"},
+		// {`1.len`, "argument to `len` not supported, got INTEGER"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+
+		switch expected := tt.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		case string:
+			switch result := evaluated.(type) {
+			case *object.Error:
+
+				if result.Message != expected {
+					t.Errorf("wrong error message. expected=%q, got=%q", expected, result.Message)
+				}
+			case *object.String:
+				testStringObject(t, evaluated, expected)
+			case *object.Array:
+				testArrayObject(t, evaluated, expected)
+			}
+		default:
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
 func TestReturnStatements(t *testing.T) {
 	tests := []struct {
 		input    string
