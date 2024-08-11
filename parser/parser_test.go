@@ -245,25 +245,61 @@ func TestParsingArrayLiterals(t *testing.T) {
 }
 
 func TestParsingIndexExpressions(t *testing.T) {
-	input := "myArray[1 + 1]"
-
-	l := lexer.New(input)
-	p := New(l)
-	program := p.ParseProgram()
-	checkParserErrors(t, p)
-
-	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
-	indexExp, ok := stmt.Expression.(*ast.IndexExpression)
-	if !ok {
-		t.Fatalf("exp not *ast.IndexExpression. got=%T", stmt.Expression)
+	tests := []struct {
+		input string
+		ident string
+	}{
+		{"foo[1 + 1]", "foo"},
+		{`bar."key"`, "bar"},
+		{`baz.2`, "baz"},
+		{`foobar.(1 + 1)`, "foobar"},
+		{`barfoo.4 + 3`, "barfoo"},
 	}
 
-	if !testIdentifier(t, indexExp.Left, "myArray") {
-		return
-	}
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
 
-	if !testInfixExpression(t, indexExp.Index, 1, "+", 1) {
-		return
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		indexExp, ok := stmt.Expression.(*ast.IndexExpression)
+		if !ok {
+			t.Fatalf("exp not *ast.IndexExpression. got=%T", stmt.Expression)
+		}
+
+		if !testIdentifier(t, indexExp.Left, tt.ident) {
+			return
+		}
+
+		switch tt.ident {
+		case "foo":
+			if !testInfixExpression(t, indexExp.Index, 1, "+", 1) {
+				return
+			}
+		case "bar":
+			idx, ok := indexExp.Index.(*ast.StringLiteral)
+
+			if !ok {
+				t.Errorf("index is not *ast.StringLiteral. got=%T", indexExp.Index)
+			}
+
+			if idx.Value != "key" {
+				t.Errorf("idx.Value not %s. got=%s", "key", idx.Value)
+			}
+		case "baz":
+			if !testIntegerLiteral(t, indexExp.Index, 2) {
+				return
+			}
+		case "foobar":
+			if !testInfixExpression(t, indexExp.Index, 1, "+", 1) {
+				return
+			}
+		case "barfoo":
+			if !testInfixExpression(t, indexExp.Index, 4, "+", 3) {
+				return
+			}
+		}
 	}
 }
 

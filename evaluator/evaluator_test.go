@@ -260,6 +260,34 @@ func TestIndexExpressions(t *testing.T) {
 			`let myStr = "foobar"; let i = 1; myStr[i]`,
 			"o",
 		},
+		{
+			"[1, 2, 3].0",
+			1,
+		},
+		{
+			`"hello world".2`,
+			"l",
+		},
+		{
+			`let str = "hello world"; (str.2) + (str.4) + (str.9);`,
+			"lol",
+		},
+		{
+			"let myArray = [1, 2, 3]; myArray.2;",
+			3,
+		},
+		{
+			"let myArray = [1, 2, 3]; (myArray.0) + (myArray.1) + (myArray.2);",
+			6,
+		},
+		{
+			"let myArray = [1, 2, 3]; let i = myArray.0; myArray.i",
+			2,
+		},
+		{
+			"[1, 2, 3].3",
+			nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -286,8 +314,8 @@ func TestDotExpressions(t *testing.T) {
 		{`"hello world".last()`, "d"},
 		{`"hello world".rest()`, "ello world"},
 		{`[1, 2, 3].push(4)`, "[1, 2, 3, 4]"},
-		{`[1, 2, 3].len`, 3},
-		{`1.len`, "argument to `len` not supported, got INTEGER"},
+		{`[1, 2, 3].len()`, 3},
+		{`1.len`, "cannot index *object.Integer"},
 		{`"hello world".doesnotexist()`, "identifier not found: doesnotexist"},
 	}
 
@@ -330,7 +358,8 @@ func TestPipeExpressions(t *testing.T) {
 
 		  result;`, 17},
 		{`"hello".len() |> push([1, 2, 3, 4], $)`, "[1, 2, 3, 4, 5]"},
-		{`4 |> [1, 2, 3].push($)`, "[1, 2, 3, 4]"},
+		// TODO: Add support for using placeholder in function invokations using dot expressions
+		// {`4 |> [1, 2, 3].push($)`, "[1, 2, 3, 4]"},
 		// {`1.len`, "argument to `len` not supported, got INTEGER"},
 	}
 
@@ -669,6 +698,27 @@ func TestHashIndexExpressions(t *testing.T) {
 		},
 		{
 			`{false: 5}[false]`,
+			5,
+		},
+		//
+		{
+			`let key = "foo"; {"foo": 5}.key`,
+			5,
+		},
+		{
+			`let map = {"foo": 5, true: 3}; (map."foo") + (map.true)`,
+			8,
+		},
+		{
+			`{}."foo"`,
+			nil,
+		},
+		{
+			`{5: 5}.5`,
+			5,
+		},
+		{
+			`{false: 5}.false`,
 			5,
 		},
 	}

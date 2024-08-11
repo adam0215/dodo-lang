@@ -323,16 +323,22 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
-	exp := &ast.CallExpression{Token: p.currToken}
+	initTok := p.currToken
 
-	p.expectPeek(token.IDENT)
+	p.nextToken()
 
-	exp.Function = p.parseIdentifier()
+	// Is function call
+	if p.currTokenIs(token.IDENT) && p.peekTokenIs(token.LPAREN) {
+		exp := &ast.CallExpression{Token: initTok}
+		exp.Function = p.parseIdentifier()
+		p.nextToken()
+		exp.Arguments = []ast.Expression{left}
+		exp.Arguments = append(exp.Arguments, p.parseExpressionList(token.RPAREN, token.COMMA, nil)...)
+		return exp
+	}
 
-	p.expectPeek(token.LPAREN)
-
-	exp.Arguments = []ast.Expression{left}
-	exp.Arguments = append(exp.Arguments, p.parseExpressionList(token.RPAREN, token.COMMA, nil)...)
+	exp := &ast.IndexExpression{Token: initTok, Left: left}
+	exp.Index = p.parseExpression(LOWEST)
 
 	return exp
 }
