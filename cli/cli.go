@@ -128,9 +128,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				currentValue := m.textInput.Value()
 				var newValue = ""
 				switch msg.Runes[0] {
-				case '(', '[', '{':
+				case '(', '[', '{', '"':
 					tk := msg.Runes[0]
-					closingTags := map[rune]string{'(': ")", '[': "]", '{': "}"}
+					closingTags := map[rune]string{'(': ")", '[': "]", '{': "}", '"': `"`}
 					if closingTag, ok := closingTags[tk]; ok {
 						newValue = currentValue[:cursorPos] + string(tk) + closingTag + currentValue[cursorPos:]
 						m.textInput.SetValue(newValue)
