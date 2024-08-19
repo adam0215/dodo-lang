@@ -27,6 +27,9 @@ let foo = "Hello World!";
 let bar = 10;
 let baz = [1, 2, 3, 4];
 let foobarbaz = {"country": "France", "capital": "Paris"};
+
+let mut foo = 5;
+let mut bar = "Snickers";
 ```
 
 ### If Statements
