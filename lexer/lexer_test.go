@@ -41,6 +41,9 @@ func TestNextToken(t *testing.T) {
 	}
 
 	add(5, 6) |> sub(20, $)
+
+	let mut mutable = 500;
+	mutable = 555;
 	`
 
 	tests := []struct {
@@ -180,6 +183,16 @@ func TestNextToken(t *testing.T) {
 		{token.COMMA, ","},
 		{token.DOLLAR, "$"},
 		{token.RPAREN, ")"},
+		{token.LET, "let"},
+		{token.MUT, "mut"},
+		{token.IDENT, "mutable"},
+		{token.ASSIGN, "="},
+		{token.INT, "500"},
+		{token.SEMICOLON, ";"},
+		{token.IDENT, "mutable"},
+		{token.ASSIGN, "="},
+		{token.INT, "555"},
+		{token.SEMICOLON, ";"},
 		{token.EOF, ""},
 	}
 

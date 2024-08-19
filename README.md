@@ -6,6 +6,7 @@ Dodo Lang is an extended/modified version of the Monkey Programming Language and
 
 The following are additional features I've added or things I've changed in the language.
 
+1. Immutable and mutable variables using the "mut" keyword, inspired by Rust.
 1. Conditional loops using the "for" keyword, like in Go.
 1. Ability to pick a character in a string by index.
 1. Ability to quickly get the last element of an array or string by using index -1.

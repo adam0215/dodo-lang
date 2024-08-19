@@ -175,18 +175,18 @@ func TestForExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`let count = 0;
+		{`let mut count = 0;
 
 		  for (count < 10) {
-		    let count = count + 1;
+		    count = count + 1;
 		  }
 
 		  count;
 			`, 10},
-		{`let count = 0;
+		{`let mut count = 0;
 
 		  for (count < 10) {
-		    let count = count + 1;
+		    count = count + 1;
 
 			if (count == 5) {
 			  return;
@@ -473,34 +473,72 @@ if (10 > 1) {
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
 
-		errObj, ok := evaluated.(*object.Error)
-
-		if !ok {
-			t.Errorf("no error object returned. got=%T(%+v)",
-				evaluated, evaluated)
-			continue
-		}
-
-		if errObj.Message != tt.expectedMessage {
-			t.Errorf("wrong error message. expected=%q, got=%q",
-				tt.expectedMessage, errObj.Message)
-		}
+		testError(t, evaluated, tt.expectedMessage)
 	}
 }
 
-func TestLetStatemnets(t *testing.T) {
+func testError(t *testing.T, obj object.Object, expectedError string) bool {
+	errObj, ok := obj.(*object.Error)
+
+	if !ok {
+		t.Errorf("no error object returned. got=%T(%+v)",
+			obj, obj)
+		return false
+	}
+
+	if errObj.Message != expectedError {
+		t.Errorf("wrong error message. expected=%q, got=%q",
+			expectedError, errObj.Message)
+		return false
+	}
+
+	return true
+}
+
+func TestLetStatements(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected int64
+		expected any
 	}{
 		{"let a = 5; a;", 5},
 		{"let a = 5 * 5; a;", 25},
 		{"let a = 5; let b = a; b;", 5},
 		{"let a = 5; let b = a; let c = a + b + 5; c;", 15},
+		{"let mut a = 5; a;", 5},
+		{"let mut a = 5 * 5; a;", 25},
+		{"let mut a = 5; let b = a; b;", 5},
+		{"let mut a = 5; let b = a; let c = a + b + 5; c;", 15},
+		{"let mut a = 5; let a = 5; a;", "identifier 'a' already exists"},
+		{"let a = 5; let a = 5; a;", "identifier 'a' already exists"},
 	}
 
 	for _, tt := range tests {
-		testIntegerObject(t, testEval(tt.input), tt.expected)
+		switch expected := tt.expected.(type) {
+		case int:
+			testIntegerObject(t, testEval(tt.input), int64(expected))
+		case string:
+			testError(t, testEval(tt.input), expected)
+		}
+	}
+}
+
+func TestReassignmentStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected any
+	}{
+		{"let mut a = 3; a = 5; a;", 5},
+		{"let mut a = 3; let b = a; a = a + b + 5; a;", 11},
+		{"let a = 5; a = 3; a;", "identifier 'a' is not mutable"},
+	}
+
+	for _, tt := range tests {
+		switch expected := tt.expected.(type) {
+		case int:
+			testIntegerObject(t, testEval(tt.input), int64(expected))
+		case string:
+			testError(t, testEval(tt.input), string(expected))
+		}
 	}
 }
 

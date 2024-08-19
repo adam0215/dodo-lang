@@ -210,7 +210,23 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return val
 		}
 
-		env.Set(node.Name.Value, val)
+		if _, ok := env.Get(node.Name.Value); ok {
+			return newError("identifier '%s' already exists", node.Name.Value)
+		}
+
+		env.Set(node.Name.Value, node.Mutable, val)
+	case *ast.ReassignmentStatement:
+		val := Eval(node.Value, env)
+
+		if isError(val) {
+			return val
+		}
+
+		if !env.IsMutable(node.Ident.Value) {
+			return newError("identifier '%s' is not mutable", node.Ident.Value)
+		}
+
+		env.Set(node.Ident.Value, true, val)
 
 	case *ast.ReturnStatement:
 		val := Eval(node.ReturnValue, env)
@@ -533,7 +549,7 @@ func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Enviro
 	env := object.NewEnclosedEnvironment(fn.Env)
 
 	for pI, param := range fn.Parameters {
-		env.Set(param.Value, args[pI])
+		env.Set(param.Value, fn.Env.IsMutable(param.Value), args[pI])
 	}
 
 	return env

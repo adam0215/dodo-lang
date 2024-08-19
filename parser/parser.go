@@ -71,7 +71,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
-	p.registerPrefix(token.FOR, p.parseForStatement)
+	p.registerPrefix(token.FOR, p.parseForExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(token.LCURLY, p.parseHashLiteral)
@@ -169,6 +169,11 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseLetStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
+	case token.IDENT:
+		if p.peekTokenIs(token.ASSIGN) {
+			return p.parseReassignmentStatement()
+		}
+		fallthrough
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -176,6 +181,11 @@ func (p *Parser) parseStatement() ast.Statement {
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
 	stmt := &ast.LetStatement{Token: p.currToken}
+
+	if p.peekTokenIs(token.MUT) {
+		stmt.Mutable = true
+		p.nextToken()
+	}
 
 	if !p.expectPeek(token.IDENT) {
 		return nil
@@ -468,7 +478,7 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	return expression
 }
 
-func (p *Parser) parseForStatement() ast.Expression {
+func (p *Parser) parseForExpression() ast.Expression {
 	exp := &ast.ForExpression{Token: p.currToken}
 
 	if !p.expectPeek(token.LPAREN) {
@@ -560,6 +570,30 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.currToken, Function: function}
 	exp.Arguments = p.parseExpressionList(token.RPAREN, token.COMMA, nil)
 	return exp
+}
+
+func (p *Parser) parseReassignmentStatement() *ast.ReassignmentStatement {
+	identExp := p.parseIdentifier()
+
+	ident, ok := identExp.(*ast.Identifier)
+
+	if !ok {
+		return nil
+	}
+
+	p.expectPeek(token.ASSIGN)
+
+	stmt := &ast.ReassignmentStatement{Token: p.currToken, Ident: ident}
+
+	p.nextToken()
+
+	exp := p.parseExpression(LOWEST)
+
+	stmt.Value = exp
+
+	p.nextToken()
+
+	return stmt
 }
 
 func (p *Parser) currTokenIs(t token.TokenType) bool {

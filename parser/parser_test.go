@@ -17,6 +17,9 @@ func TestLetStatements(t *testing.T) {
 		{"let x = 5;", "x", 5},
 		{"let y = true;", "y", true},
 		{"let foobar = y;", "foobar", "y"},
+		{"let mut x = 5;", "x", 5},
+		{"let mut y = true;", "y", true},
+		{"let mut foobar = y;", "foobar", "y"},
 	}
 
 	for _, tt := range tests {
@@ -43,8 +46,8 @@ func TestLetStatements(t *testing.T) {
 }
 
 func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
-	if s.TokenLiteral() != "let" {
-		t.Errorf("s.TokenLiteral not 'let'. got=%q", s.TokenLiteral())
+	if s.TokenLiteral() != "let" && s.TokenLiteral() != "let mut" {
+		t.Errorf("s.TokenLiteral not 'let' or 'let mut'. got=%q", s.TokenLiteral())
 		return false
 	}
 
@@ -55,6 +58,17 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 		return false
 	}
 
+	// TODO: Implement proper test that ensures the right variables are mutable, and those who shouldn't aren't
+	if letStmt.TokenLiteral() == "let" && letStmt.Mutable != false {
+		t.Errorf("letStmt.Mutable not false despite immutable statement")
+		return false
+	}
+
+	if letStmt.TokenLiteral() == "let mut" && letStmt.Mutable != true {
+		t.Errorf("letStmt.Mutable not true despite mutable statement")
+		return false
+	}
+
 	if letStmt.Name.Value != name {
 		t.Errorf("letStmt.Name.Value not '%s'. got=%s", name, letStmt.Name.Value)
 		return false
@@ -62,6 +76,69 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 
 	if letStmt.Name.TokenLiteral() != name {
 		t.Errorf("letStmt.Name.TokenLiteral() not '%s'. got=%s", name, letStmt.Name.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
+func TestReassignmentStatements(t *testing.T) {
+	tests := []struct {
+		input                   string
+		expectedReassignedIdent string
+		expectedValue           interface{}
+	}{
+		{"x = 7;", "x", 7},
+		{"y = true;", "y", true},
+		{`x = y;`, "x", "y"},
+	}
+
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
+
+		stmt := program.Statements[0]
+		if !testReassignmentStatement(t, stmt, tt.expectedReassignedIdent) {
+			return
+		}
+
+		val := stmt.(*ast.ReassignmentStatement).Value
+
+		fmt.Println(val)
+
+		if !testLiteralExpression(t, val, tt.expectedValue) {
+			return
+		}
+	}
+}
+
+func testReassignmentStatement(t *testing.T, s ast.Statement, ident string) bool {
+	reassignStmt, ok := s.(*ast.ReassignmentStatement)
+
+	if !ok {
+		t.Errorf("s not *ast.ReassignmentStatement. got=%T", s)
+		return false
+	}
+
+	if reassignStmt.TokenLiteral() != "=" {
+		t.Errorf("s.TokenLiteral not '='. got=%q", s.TokenLiteral())
+		return false
+	}
+
+	if reassignStmt.Ident.Value != ident {
+		t.Errorf("reassignStmt.Ident.Value not '%s'. got=%s", ident, reassignStmt.Ident.Value)
+		return false
+	}
+
+	if reassignStmt.Ident.TokenLiteral() != ident {
+		t.Errorf("reassignStmt.Ident.TokenLiteral() not '%s'. got=%s", ident, reassignStmt.Ident.TokenLiteral())
 		return false
 	}
 

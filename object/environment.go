@@ -1,13 +1,16 @@
 package object
 
 type Environment struct {
-	store map[string]Object
-	outer *Environment
+	store    map[string]Object
+	mutables map[string]bool
+	outer    *Environment
 }
 
 func NewEnvironment() *Environment {
 	s := make(map[string]Object)
-	return &Environment{store: s, outer: nil}
+	m := make(map[string]bool)
+
+	return &Environment{store: s, mutables: m, outer: nil}
 }
 
 func NewEnclosedEnvironment(outer *Environment) *Environment {
@@ -26,7 +29,16 @@ func (e *Environment) Get(name string) (Object, bool) {
 	return obj, ok
 }
 
-func (e *Environment) Set(name string, val Object) Object {
+func (e *Environment) IsMutable(name string) bool {
+	return e.mutables[name]
+}
+
+func (e *Environment) Set(name string, mutable bool, val Object) Object {
 	e.store[name] = val
+
+	if mutable {
+		e.mutables[name] = true
+	}
+
 	return val
 }

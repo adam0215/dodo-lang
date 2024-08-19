@@ -53,13 +53,20 @@ func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
 func (i *Identifier) String() string       { return i.Value }
 
 type LetStatement struct {
-	Token token.Token // token.LET token
-	Name  *Identifier
-	Value Expression
+	Token   token.Token // token.LET token
+	Name    *Identifier
+	Value   Expression
+	Mutable bool
 }
 
-func (ls *LetStatement) statementNode()       {}
-func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
+func (ls *LetStatement) statementNode() {}
+func (ls *LetStatement) TokenLiteral() string {
+	if ls.Mutable {
+		return ls.Token.Literal + " mut"
+	} else {
+		return ls.Token.Literal
+	}
+}
 func (ls *LetStatement) String() string {
 	var out bytes.Buffer
 
@@ -71,6 +78,25 @@ func (ls *LetStatement) String() string {
 		out.WriteString(ls.Value.String())
 	}
 
+	out.WriteString(";")
+
+	return out.String()
+}
+
+type ReassignmentStatement struct {
+	Token token.Token // token.ASSIGN token
+	Ident *Identifier
+	Value Expression
+}
+
+func (ras *ReassignmentStatement) statementNode()       {}
+func (ras *ReassignmentStatement) TokenLiteral() string { return ras.Token.Literal }
+func (ls *ReassignmentStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(ls.Ident.String())
+	out.WriteString(" " + ls.TokenLiteral() + " ")
+	out.WriteString(ls.Value.String())
 	out.WriteString(";")
 
 	return out.String()
